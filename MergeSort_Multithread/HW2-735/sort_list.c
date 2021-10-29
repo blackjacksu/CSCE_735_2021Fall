@@ -19,7 +19,33 @@
 // VS: ... declare thread variables, mutexes, condition varables, etc.,
 // VS: ... as needed for this assignment 
 //
+typedef struct thread_arg{
+    int q;
+    int level;
+    int np;
+    int my_id;
+    int * ptr;
+};
 
+pthread_cond_t sort_complete_cond;
+pthread_mutex_t sort_complete_mutex;
+
+pthread_mutex_t level_count_mutex;
+int level_count;
+
+pthread_cond_t level_complete_cond;
+pthread_mutex_t level_complete_mutex;
+
+typedef struct thread_node
+{
+    int insert_count;
+    pthread_t thread;
+    pthread_mutex_t insert_count_mutex;
+    pthread_cond_t insert_complete_cond;
+    pthread_mutex_t insert_complete_mutex;
+};
+
+struct thread_node threads[MAX_THREADS];
 // Global variables
 int num_threads;		// Number of threads to create - user input 
 int list_size;			// List size
@@ -105,42 +131,24 @@ int binary_search_le(int v, int *list, int first, int last) {
     return right;
 }
 
-// Sort list via parallel merge sort
-//
-// VS: ... to be parallelized using threads ...
-//
-void sort_list(int q) {
-
-    int i, level, my_id; 
-    int np, my_list_size; 
-    int ptr[num_threads+1];
+void * sort_list_parallel(struct thread_arg * arg)
+{
+    int q = arg->q;
+    int level = arg->level;
+    int np = arg->np;
+    int my_id = arg->my_id;
+    int * ptr = arg->ptr;
 
     int my_own_blk, my_own_idx;
     int my_blk_size, my_search_blk, my_search_idx, my_search_idx_max;
     int my_write_blk, my_write_idx;
     int my_search_count; 
-    int idx, i_write; 
-    
-    np = list_size/num_threads; 	// Sub list size 
+    int i, idx, i_write; 
 
-    // Initialize starting position for each sublist
-    for (my_id = 0; my_id < num_threads; my_id++) {
-        ptr[my_id] = my_id * np;
-    }
-    ptr[num_threads] = list_size;
-
-    // Sort local lists
-    for (my_id = 0; my_id < num_threads; my_id++) {
-        my_list_size = ptr[my_id+1]-ptr[my_id];
-        qsort(&list[ptr[my_id]], my_list_size, sizeof(int), compare_int);
-    }
 if (DEBUG) print_list(list, list_size); 
 
     // Sort list
     for (level = 0; level < q; level++) {
-
-        // Each thread scatters its sub_list into work array
-	for (my_id = 0; my_id < num_threads; my_id++) {
 
 	    my_blk_size = np * (1 << level); 
 
@@ -168,31 +176,140 @@ if (DEBUG) print_list(list, list_size);
 	    my_search_count = idx - my_search_idx;
 	    i_write = my_write_idx + my_search_count + (ptr[my_id]-my_own_idx); 
 	    work[i_write] = list[ptr[my_id]];
+        pthread_mutex_lock(&threads[my_id/2*2].insert_count_mutex);
+        threads[my_id/2*2].insert_count++;
+        pthread_mutex_unlock(&threads[my_id/2*2].insert_count_mutex);
 
 	    // Linear search for 2nd element onwards
 	    for (i = ptr[my_id]+1; i < ptr[my_id+1]; i++) {
 	        if (my_search_blk > my_own_blk) {
-		    while ((list[i] > list[idx]) && (idx < my_search_idx_max)) {
-		        idx++; my_search_count++;
+		        while ((list[i] > list[idx]) && (idx < my_search_idx_max)) {
+		            idx++; 
+                    my_search_count++;
+		        }
+		    } 
+            else {
+		        while ((list[i] >= list[idx]) && (idx < my_search_idx_max)) {
+		            idx++; 
+                    my_search_count++;
+		        }
 		    }
-		} else {
-		    while ((list[i] >= list[idx]) && (idx < my_search_idx_max)) {
-		        idx++; my_search_count++;
-		    }
-		}
-		i_write = my_write_idx + my_search_count + (i-my_own_idx); 
-		work[i_write] = list[i];
+		    i_write = my_write_idx + my_search_count + (i-my_own_idx); 
+		    work[i_write] = list[i];
+            pthread_mutex_lock(&threads[my_id/2*2].insert_count_mutex);
+            threads[my_id/2*2].insert_count++;
+            pthread_mutex_unlock(&threads[my_id/2*2].insert_count_mutex);
 	    }
-	}
+
+        // wait here until all element is inserted in work
+        if (threads[my_id/2*2].insert_count == (my_blk_size*2))
+        {
+            // The insertion in work list is done
+            threads[my_id/2*2].insert_count = 0;
+            pthread_mutex_lock(&level_count_mutex);
+            level_count++;
+            pthread_mutex_unlock(&level_count_mutex);
+            pthread_cond_signal(&threads[my_id].insert_complete_cond);
+        }
+        else
+        {
+            // The insertion in work list is not yet done
+            // Please kindly wait here for a while
+            pthread_mutex_lock(&threads[my_id].insert_complete_mutex);
+            pthread_cond_wait(&threads[my_id].insert_complete_cond, &threads[my_id].insert_complete_mutex);
+            pthread_mutex_unlock(&threads[my_id].insert_complete_mutex);
+        }
+
+        // wait here until all thread are done with sorting
+        if (level_count == list_size/my_blk_size)
+        {
+            // The insertion in work list is done
+            level_count = 0;
+            pthread_cond_signal(&level_complete_cond);
+        }
+        else
+        {
+            // The insertion in work list is not yet done
+            // Please kindly wait here for a while
+            pthread_mutex_lock(&level_complete_mutex);
+            pthread_cond_wait(&level_complete_cond, &level_complete_mutex);
+            pthread_mutex_unlock(&level_complete_mutex);
+        }
+
         // Copy work into list for next itertion
-	for (my_id = 0; my_id < num_threads; my_id++) {
-	    for (i = ptr[my_id]; i < ptr[my_id+1]; i++) {
+	    for (i = ptr[my_id]; i < ptr[my_id+1]; i++) 
+        {
 	        list[i] = work[i];
-	    } 
+	    }
+
+        // terminate those thread that is not needed
+        if ((my_id % (1 << (level+1))) == 0)
+        {
+            pthread_exit(0);
+        }
 	}
-if (DEBUG) print_list(list, list_size); 
+
+    if (level == q)
+    {
+        // The sorting is completed
+        pthread_cond_signal(&sort_complete_cond);
     }
+
+if (DEBUG) print_list(list, list_size); 
+
 }
+
+// Sort list via parallel merge sort
+//
+// VS: ... to be parallelized using threads ...
+//
+void sort_list(int q) {
+
+    struct thread_arg * arg = (struct thread_arg *) malloc(sizeof(struct thread_arg));
+    int my_id; 
+    int np, my_list_size; 
+    int ptr[num_threads+1];
+    int thread_status;
+
+    np = list_size/num_threads; 	// Sub list size 
+
+    // Initialize starting position for each sublist
+    for (my_id = 0; my_id < num_threads; my_id++) {
+        ptr[my_id] = my_id * np;
+    }
+    ptr[num_threads] = list_size;
+
+    // Sort local lists
+    for (my_id = 0; my_id < num_threads; my_id++) 
+    {
+        my_list_size = ptr[my_id+1]-ptr[my_id];
+        qsort(&list[ptr[my_id]], my_list_size, sizeof(int), compare_int);
+    }
+
+    for (my_id = 0; my_id < num_threads; my_id++) 
+    {
+        arg->level = 0;
+        arg->my_id = my_id;
+        arg->np = np;
+        arg->ptr = ptr;
+        arg->q = q;
+
+        thread_status = pthread_create(&threads[my_id].thread, NULL, sort_list_parallel, (void *)arg);
+
+        if (thread_status != 0)
+        {
+            printf("Thread %d created fail, error:%d\n", my_id, thread_status);
+        }
+    }
+    // wait sorting complete signal
+    pthread_mutex_lock(&sort_complete_mutex);
+
+    pthread_cond_wait(&sort_complete_cond, &sort_complete_mutex);
+
+    pthread_mutex_unlock(&sort_complete_mutex);
+}
+
+
 
 // Main program - set up list of random integers and use threads to sort the list
 //
@@ -205,27 +322,28 @@ int main(int argc, char *argv[]) {
     struct timespec start, stop, stop_qsort;
     double total_time, time_res, total_time_qsort;
     int k, q, j, error; 
+    int i, thread_init;
 
     // Read input, validate
     if (argc != 3) {
-	printf("Need two integers as input \n"); 
-	printf("Use: <executable_name> <log_2(list_size)> <log_2(num_threads)>\n"); 
-	exit(0);
+	    printf("Need two integers as input \n"); 
+	    printf("Use: <executable_name> <log_2(list_size)> <log_2(num_threads)>\n"); 
+	    exit(0);
     }
     k = atoi(argv[argc-2]);
     if ((list_size = (1 << k)) > MAX_LIST_SIZE) {
-	printf("Maximum list size allowed: %d.\n", MAX_LIST_SIZE);
-	exit(0);
+	    printf("Maximum list size allowed: %d.\n", MAX_LIST_SIZE);
+	    exit(0);
     }; 
     q = atoi(argv[argc-1]);
     if ((num_threads = (1 << q)) > MAX_THREADS) {
-	printf("Maximum number of threads allowed: %d.\n", MAX_THREADS);
-	exit(0);
+	    printf("Maximum number of threads allowed: %d.\n", MAX_THREADS);
+	    exit(0);
     }; 
     if (num_threads > list_size) {
-	printf("Number of threads (%d) < list_size (%d) not allowed.\n", 
-	   num_threads, list_size);
-	exit(0);
+	    printf("Number of threads (%d) < list_size (%d) not allowed.\n", 
+	    num_threads, list_size);
+	    exit(0);
     }; 
 
     // Allocate list, list_orig, and work
@@ -238,6 +356,68 @@ int main(int argc, char *argv[]) {
 // VS: ... May need to initialize mutexes, condition variables, 
 // VS: ... and their attributes
 //
+    for (i = 0; i < MAX_THREADS; i++)
+    {
+        threads[i].insert_count = 0;
+
+        thread_init = pthread_mutex_init(&threads[i].insert_count_mutex, NULL);
+
+        if (thread_init != 0)
+        {
+            printf("Thread %d mutex init failed, error:%d\n", i, thread_init);
+        }
+
+        thread_init = pthread_cond_init(&threads[i].insert_complete_cond, NULL);
+
+        if (thread_init != 0)
+        {
+            printf("Thread %d cond init failed, error:%d\n", i, thread_init);
+        }
+
+        thread_init = pthread_mutex_init(&threads[i].insert_complete_mutex, NULL);
+
+        if (thread_init != 0)
+        {
+            printf("Thread %d cond mutex init failed, error:%d\n", i, thread_init);
+        }
+    }
+
+    level_count = 0;
+
+    thread_init = pthread_mutex_init(&sort_complete_mutex, NULL);
+
+    if (thread_init != 0)
+    {
+        printf("Sorting completing mutex init failed, error:%d\n", thread_init);
+    }
+
+    thread_init = pthread_cond_init(&sort_complete_cond, NULL);
+
+    if (thread_init != 0)
+    {
+        printf("Sorting completing cond init failed, error:%d\n", thread_init);
+    }
+
+    thread_init = pthread_mutex_init(&level_complete_mutex, NULL);
+
+    if (thread_init != 0)
+    {
+        printf("Level completing mutex init failed, error:%d\n", thread_init);
+    }
+
+    thread_init = pthread_cond_init(&level_complete_cond, NULL);
+
+    if (thread_init != 0)
+    {
+        printf("Level completing cond init failed, error:%d\n", thread_init);
+    }
+
+    thread_init = pthread_mutex_init(&level_count_mutex, NULL);
+
+    if (thread_init != 0)
+    {
+        printf("Level count mutex init failed, error:%d\n", thread_init);
+    }
 
     // Initialize list of random integers; list will be sorted by 
     // multi-threaded parallel merge sort
