@@ -12,7 +12,7 @@
 #define MAX_THREADS     65536
 #define MAX_LIST_SIZE   INT_MAX
 
-#define DEBUG 0
+#define DEBUG 1
 
 // Global variables
 int num_threads;		// Number of threads to create - user input 
@@ -20,6 +20,9 @@ int list_size;			// List size
 int *list;			// List of values
 int *work;			// Work array
 int *list_orig;			// Original list of values, used for error checking
+
+omp_lock_t work_lock;
+omp_lock_t list_lock;
 
 // Print list - for debugging
 void print_list(int *list, int list_size) {
@@ -105,6 +108,8 @@ int binary_search_le(int v, int *list, int first, int last) {
 //
 void sort_list(int q) {
 
+#pragma omp parallel default(shared)
+{
     int i, level, my_id; 
     int np, my_list_size; 
     int ptr[num_threads+1];
@@ -114,7 +119,7 @@ void sort_list(int q) {
     int my_write_blk, my_write_idx;
     int my_search_count; 
     int idx, i_write; 
-    
+
     np = list_size/num_threads; 	// Sub list size 
 
     // Initialize starting position for each sublist
@@ -123,17 +128,24 @@ void sort_list(int q) {
     }
     ptr[num_threads] = list_size;
 
+// #pragma omp barrier
     // Sort local lists
+// #pragma omp parallel for 
     for (my_id = 0; my_id < num_threads; my_id++) {
         my_list_size = ptr[my_id+1]-ptr[my_id];
+        omp_set_lock(&list_lock);
         qsort(&list[ptr[my_id]], my_list_size, sizeof(int), compare_int);
+        omp_unset_lock(&list_lock);
     }
+
 if (DEBUG) print_list(list, list_size); 
 
+
     // Sort list
+
     for (level = 0; level < q; level++) {
 
-        // Each thread scatters its sub_list into work array
+    // Each thread scatters its sub_list into work array
 	for (my_id = 0; my_id < num_threads; my_id++) {
 
 	    my_blk_size = np * (1 << level); 
@@ -152,40 +164,54 @@ if (DEBUG) print_list(list, list_size);
 	    
 	    my_search_count = 0;
 
-
 	    // Binary search for 1st element
 	    if (my_search_blk > my_own_blk) {
-               idx = binary_search_lt(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
-	    } else {
-               idx = binary_search_le(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
+            idx = binary_search_lt(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
+	    } 
+        else {
+            idx = binary_search_le(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
 	    }
+
 	    my_search_count = idx - my_search_idx;
 	    i_write = my_write_idx + my_search_count + (ptr[my_id]-my_own_idx); 
+        omp_set_lock(&work_lock);    
 	    work[i_write] = list[ptr[my_id]];
+        omp_unset_lock(&work_lock);
 
 	    // Linear search for 2nd element onwards
 	    for (i = ptr[my_id]+1; i < ptr[my_id+1]; i++) {
 	        if (my_search_blk > my_own_blk) {
-		    while ((list[i] > list[idx]) && (idx < my_search_idx_max)) {
-		        idx++; my_search_count++;
+		        while ((list[i] > list[idx]) && (idx < my_search_idx_max)) {
+		            idx++; 
+                    my_search_count++;
+		        }
+		    } 
+            else {
+		        while ((list[i] >= list[idx]) && (idx < my_search_idx_max)) {
+		            idx++; 
+                    my_search_count++;
+		        }
 		    }
-		} else {
-		    while ((list[i] >= list[idx]) && (idx < my_search_idx_max)) {
-		        idx++; my_search_count++;
-		    }
-		}
-		i_write = my_write_idx + my_search_count + (i-my_own_idx); 
-		work[i_write] = list[i];
+		    i_write = my_write_idx + my_search_count + (i-my_own_idx); 
+            omp_set_lock(&work_lock);
+		    work[i_write] = list[i];
+            omp_unset_lock(&work_lock);
 	    }
 	}
-        // Copy work into list for next itertion
+// #pragma omp for
+    // Copy work into list for next itertion
 	for (my_id = 0; my_id < num_threads; my_id++) {
 	    for (i = ptr[my_id]; i < ptr[my_id+1]; i++) {
+            omp_set_lock(&list_lock);
 	        list[i] = work[i];
+            omp_unset_lock(&list_lock);
 	    } 
 	}
+#pragma omp barrier
+
 if (DEBUG) print_list(list, list_size); 
     }
+}
 }
 
 // Main program - set up list of random integers and use threads to sort the list
@@ -199,6 +225,9 @@ int main(int argc, char *argv[]) {
     struct timespec start, stop, stop_qsort;
     double total_time, time_res, total_time_qsort;
     int k, q, j, error; 
+
+    omp_init_lock(&work_lock);
+    omp_init_lock(&list_lock);
 
     // Read input, validate
     if (argc != 3) {
@@ -273,7 +302,11 @@ int main(int argc, char *argv[]) {
 
 // VS: ... destroy mutex, condition variables, etc.
 
-    free(list); free(work); free(list_orig); 
+    free(list); 
+    free(work); 
+    free(list_orig); 
+    omp_destroy_lock(&work_lock); 
+    omp_destroy_lock(&list_lock);
 
 }
 
