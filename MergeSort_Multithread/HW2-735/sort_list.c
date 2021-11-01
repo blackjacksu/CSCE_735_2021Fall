@@ -12,7 +12,7 @@
 #define MAX_THREADS     65536
 #define MAX_LIST_SIZE   100000000
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Thread variables
 //
@@ -36,21 +36,12 @@ pthread_barrierattr_t b_attr;
 
 pthread_cond_t cond;
 pthread_mutex_t lock;
-pthread_mutex_t sublist_sorted_count_mutex;
-unsigned long sublist_sorted_mask;
-pthread_cond_t sorted_cond;
-pthread_mutex_t sorted_cond_mutex;
 pthread_barrier_t barrier;
 pthread_mutex_t list_mutex;
 pthread_mutex_t work_mutex;
 
 typedef struct thread_node {
-    int inserted_count;
-    int sync_count;
-    pthread_cond_t cond_count;
     pthread_t thread;
-    pthread_mutex_t cond_mutex;
-    pthread_mutex_t count_mutex;
 };
 
 struct thread_node thread_nodes[MAX_THREADS];
@@ -174,11 +165,6 @@ void * sort_sublist(void * arg_ptr)
 if (DEBUG)  print_list(list, list_size);
     for (level = 0; level < q; level++)
     {
-        // Reset counter mask
-        pthread_mutex_lock(&sublist_sorted_count_mutex);
-	    sublist_sorted_mask &= ~(1 << my_id);
-        thread_nodes[my_id].sync_count = 0;
-        pthread_mutex_unlock(&sublist_sorted_count_mutex);
         // Barrier thread
         my_blk_size = np * (1 << level);
         threads_per_merge = 1 << (1+level);
@@ -212,12 +198,6 @@ if (DEBUG)  print_list(list, list_size);
 	    work[i_write] = list[ptr[my_id]];
         pthread_mutex_unlock(&work_mutex);
 
-        i_write_merged_count = i_write/my_blk_size/2*2;
-        // lock the count when updateing 
-        pthread_mutex_lock(&thread_nodes[i_write_merged_count].count_mutex);
-        thread_nodes[i_write_merged_count].inserted_count++;
-        pthread_mutex_unlock(&thread_nodes[i_write_merged_count].count_mutex);
-
 	    // Linear search for 2nd element onwards
 	    for (i = ptr[my_id]+1; i < ptr[my_id+1]; i++) {
 	        if (my_search_blk > my_own_blk) {
@@ -240,40 +220,8 @@ if (DEBUG)  print_list(list, list_size);
             pthread_mutex_unlock(&work_mutex);
 
             i_write_merged_count = i_write/my_blk_size/2*2;
-
-            // lock the count when updateing 
-            pthread_mutex_lock(&thread_nodes[i_write_merged_count].count_mutex);
-            thread_nodes[i_write_merged_count].inserted_count++;
-            pthread_mutex_unlock(&thread_nodes[i_write_merged_count].count_mutex);
 	    }
-
-        // // finished inserting for the sublist to work[]
-        // if (thread_nodes[my_write_blk].inserted_count == my_blk_size*2)
-        // {
-        //     thread_nodes[my_write_blk].sync_count++;
-        //     pthread_cond_signal(&thread_nodes[my_write_blk].cond_count);
-        // }
-        // else
-        // {
-        //     thread_nodes[my_write_blk].sync_count++;
-        //     // mutex lock
-        //     pthread_mutex_lock(&thread_nodes[my_write_blk].cond_mutex);
-        //     pthread_cond_wait(&thread_nodes[my_write_blk].cond_count, &thread_nodes[my_write_blk].cond_mutex);
-        //     pthread_mutex_unlock(&thread_nodes[my_write_blk].cond_mutex);
-        // }
-
         pthread_barrier_wait(&barrier);
-
-        // // wait all thread are ready
-        // if (thread_nodes[my_write_blk].sync_count == threads_per_merge)
-        // {
-        //     pthread_mutex_lock(&thread_nodes[my_write_blk].count_mutex);
-        //     thread_nodes[my_write_blk].inserted_count = 0;
-        //     pthread_mutex_unlock(&thread_nodes[my_write_blk].count_mutex);
-        //     pthread_mutex_lock(&sublist_sorted_count_mutex);
-	    //     sublist_sorted_mask |= (1 << my_id);
-        //     pthread_mutex_unlock(&sublist_sorted_count_mutex);
-        // }
         
         // pthread signal
         // Copy work into list for next itertion
@@ -286,7 +234,7 @@ if (DEBUG)  print_list(list, list_size);
 
         pthread_barrier_wait(&barrier);
 
-        printf("Thread %d pass, level:%d\n", my_id, level);
+if (DEBUG)  printf("Thread %d pass, level:%d\n", my_id, level);
 
 if (DEBUG)  print_list(list, list_size);
     }
@@ -319,14 +267,6 @@ void sort_list(int q) {
     }
     ptr[num_threads] = list_size;
 
-    // Sort local lists
-    // for (my_id = 0; my_id < num_threads; my_id++) {
-    //     my_list_size = ptr[my_id+1]-ptr[my_id];
-    //     qsort(&list[ptr[my_id]], my_list_size, sizeof(int), compare_int);
-    // }
-
-// if (DEBUG) print_list(list, list_size); 
-
     // Sort list
     // Each thread scatters its sub_list into work array
 	for (my_id = 0; my_id < num_threads; my_id++) {
@@ -340,7 +280,7 @@ void sort_list(int q) {
 
         thread_status = pthread_create(&thread_nodes[my_id].thread, &thread_attr, sort_sublist, (void *) args[my_id]);
 
-        printf("Thread %d created\n", args[my_id]->my_id);
+if (DEBUG) printf("Thread %d created\n", args[my_id]->my_id);
 
         if (thread_status != 0)
         {
@@ -355,58 +295,6 @@ void sort_list(int q) {
     pthread_cond_wait(&cond, &lock);
 
     pthread_mutex_unlock(&lock);
-
-	//     my_blk_size = np * (1 << level); 
-
-	//     my_own_blk = ((my_id >> level) << level);
-	//     my_own_idx = ptr[my_own_blk];
-
-	//     my_search_blk = ((my_id >> level) << level) ^ (1 << level);
-	//     my_search_idx = ptr[my_search_blk];
-	//     my_search_idx_max = my_search_idx+my_blk_size;
-
-	//     my_write_blk = ((my_id >> (level+1)) << (level+1));
-	//     my_write_idx = ptr[my_write_blk];
-
-	//     idx = my_search_idx;
-	    
-	//     my_search_count = 0;
-
-
-	//     // Binary search for 1st element
-	//     if (my_search_blk > my_own_blk) {
-    //         idx = binary_search_lt(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
-	//     } 
-    //     else {
-    //         idx = binary_search_le(list[ptr[my_id]], list, my_search_idx, my_search_idx_max); 
-	//     }
-	//     my_search_count = idx - my_search_idx;
-	//     i_write = my_write_idx + my_search_count + (ptr[my_id]-my_own_idx); 
-	//     work[i_write] = list[ptr[my_id]];
-
-	//     // Linear search for 2nd element onwards
-	//     for (i = ptr[my_id]+1; i < ptr[my_id+1]; i++) {
-	//         if (my_search_blk > my_own_blk) {
-	// 	        while ((list[i] > list[idx]) && (idx < my_search_idx_max)) {
-	// 	            idx++; my_search_count++;
-	// 	        }
-	// 	    } 
-    //         else {
-	// 	        while ((list[i] >= list[idx]) && (idx < my_search_idx_max)) {
-	// 	            idx++; my_search_count++;
-	// 	        }
-	// 	    }
-	// 	    i_write = my_write_idx + my_search_count + (i-my_own_idx); 
-	// 	    work[i_write] = list[i];
-	//     }
-	// }
-    //     // Copy work into list for next itertion
-	// for (my_id = 0; my_id < num_threads; my_id++) {
-	//     for (i = ptr[my_id]; i < ptr[my_id+1]; i++) {
-	//         list[i] = work[i];
-	//     } 
-
-// if (DEBUG) print_list(list, list_size); 
 }
 
 
@@ -459,28 +347,7 @@ int main(int argc, char *argv[]) {
 
     pthread_attr_init(&thread_attr);
     pthread_attr_setguardsize(&thread_attr, 0xffff);
-    for (i = 0; i < MAX_THREADS; i++) {
-        thread_init_status = pthread_cond_init(&thread_nodes[i].cond_count, NULL);        
-        if (thread_init_status != 0)
-        {
-            printf("Init barrier fail:%d\n", i);
-            exit(0);
-        }
-        thread_init_status = pthread_mutex_init(&thread_nodes[i].cond_mutex, NULL);        
-        if (thread_init_status != 0)
-        {
-            printf("Init cond_lock fail:%d\n", i);
-            exit(0);
-        }
-        thread_init_status = pthread_mutex_init(&thread_nodes[i].count_mutex, NULL);        
-        if (thread_init_status != 0)
-        {
-            printf("Init count lock fail:%d\n", i);
-            exit(0);
-        }
-        thread_nodes[i].inserted_count = 0;
-        thread_nodes[i].sync_count = 0;
-    }
+
     thread_init_status = pthread_mutex_init(&list_mutex, NULL);        
     if (thread_init_status != 0)
     {
@@ -498,12 +365,6 @@ int main(int argc, char *argv[]) {
     {
         printf("Init mutex fail:%d\n", i);
         exit(0);
-    }    
-    thread_init_status = pthread_mutex_init(&sublist_sorted_count_mutex, NULL);
-    if (thread_init_status != 0)
-    {
-        printf("Init sublist count mutex fail:%d\n", i);
-        exit(0);
     }
     thread_init_status = pthread_cond_init(&cond, NULL);
     if (thread_init_status != 0)
@@ -517,8 +378,6 @@ int main(int argc, char *argv[]) {
         printf("Init barrier fail:%d\n", i);
         exit(0);
     }
-
-    sublist_sorted_mask = ULONG_MAX;
 
     // printf("Mask: 0x%lx, Size of long:%lu\n", sublist_sorted_mask, sizeof(sublist_sorted_mask));
 
@@ -545,12 +404,12 @@ int main(int argc, char *argv[]) {
 // VS: ... replace this call with multi-threaded parallel routine for merge sort
 // VS: ... need to create threads and execute thread routine that implements 
 // VS: ... parallel merge sort
-    printf("Old list\n");
+if (DEBUG) printf("Old list\n");
 if (DEBUG) print_list(list, list_size); 
 
     sort_list(q);
 
-    printf("New list\n");
+if (DEBUG) printf("New list\n");
 
 if (DEBUG) print_list(list, list_size); 
 
