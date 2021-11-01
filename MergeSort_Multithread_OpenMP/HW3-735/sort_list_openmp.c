@@ -12,7 +12,7 @@
 #define MAX_THREADS     65536
 #define MAX_LIST_SIZE   INT_MAX
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Global variables
 int num_threads;		// Number of threads to create - user input 
@@ -130,12 +130,12 @@ void sort_list(int q) {
 
 // #pragma omp barrier
     // Sort local lists
-// #pragma omp parallel for 
+#pragma omp for
     for (my_id = 0; my_id < num_threads; my_id++) {
         my_list_size = ptr[my_id+1]-ptr[my_id];
-        omp_set_lock(&list_lock);
+        // omp_set_lock(&list_lock);
         qsort(&list[ptr[my_id]], my_list_size, sizeof(int), compare_int);
-        omp_unset_lock(&list_lock);
+        // omp_unset_lock(&list_lock);
     }
 
 if (DEBUG) print_list(list, list_size); 
@@ -146,6 +146,7 @@ if (DEBUG) print_list(list, list_size);
     for (level = 0; level < q; level++) {
 
     // Each thread scatters its sub_list into work array
+#pragma omp for 
 	for (my_id = 0; my_id < num_threads; my_id++) {
 
 	    my_blk_size = np * (1 << level); 
@@ -174,9 +175,9 @@ if (DEBUG) print_list(list, list_size);
 
 	    my_search_count = idx - my_search_idx;
 	    i_write = my_write_idx + my_search_count + (ptr[my_id]-my_own_idx); 
-        omp_set_lock(&work_lock);    
+        // omp_set_lock(&work_lock);    
 	    work[i_write] = list[ptr[my_id]];
-        omp_unset_lock(&work_lock);
+        // omp_unset_lock(&work_lock);
 
 	    // Linear search for 2nd element onwards
 	    for (i = ptr[my_id]+1; i < ptr[my_id+1]; i++) {
@@ -193,18 +194,18 @@ if (DEBUG) print_list(list, list_size);
 		        }
 		    }
 		    i_write = my_write_idx + my_search_count + (i-my_own_idx); 
-            omp_set_lock(&work_lock);
+            // omp_set_lock(&work_lock);
 		    work[i_write] = list[i];
-            omp_unset_lock(&work_lock);
+            // omp_unset_lock(&work_lock);
 	    }
 	}
-// #pragma omp for
+#pragma omp for 
     // Copy work into list for next itertion
 	for (my_id = 0; my_id < num_threads; my_id++) {
 	    for (i = ptr[my_id]; i < ptr[my_id+1]; i++) {
-            omp_set_lock(&list_lock);
+            // omp_set_lock(&list_lock);
 	        list[i] = work[i];
-            omp_unset_lock(&list_lock);
+            // omp_unset_lock(&list_lock);
 	    } 
 	}
 #pragma omp barrier
