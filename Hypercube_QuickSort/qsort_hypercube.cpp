@@ -1,6 +1,8 @@
 // -----------------------------------------------------------------------------
 // Hypercube Quicksort to sort a list of integers distributed across processors
 // MPI-based implementation
+// Compile (OSX): mpicxx -o test qsort_hypercube.cpp
+// Run (OSX): mpirun ./test
 //
 #include <cmath>
 #include <cstdlib>
@@ -80,22 +82,26 @@ int * HyperCube_Class::merged_list(int * list1, int list1_size, int * list2, int
     int idx1 = 0; 
     int idx2 = 0; 
     int idx = 0; 
+
     while ((idx1 < list1_size) && (idx2 < list2_size)) {
-	if (list1[idx1] <= list2[idx2]) {
-	    list[idx] = list1[idx1]; 
-	    idx++; idx1++;
-	} else {
-	    list[idx] = list2[idx2]; 
-	    idx++; idx2++;
-	}
+		if (list1[idx1] <= list2[idx2]) {
+		    list[idx] = list1[idx1]; 
+		    idx++; 
+			idx1++;
+		} 
+		else {
+		    list[idx] = list2[idx2]; 
+		    idx++; 
+			idx2++;
+		}
     }
     while (idx1 < list1_size) {
-	list[idx] = list1[idx1]; 
-	idx++; idx1++;
+		list[idx] = list1[idx1]; 
+		idx++; idx1++;
     }
     while (idx2 < list2_size) {
-	list[idx] = list2[idx2]; 
-	idx++; idx2++;
+		list[idx] = list2[idx2]; 
+		idx++; idx2++;
     }
     return list;
 }
@@ -110,13 +116,20 @@ int * HyperCube_Class::merged_list(int * list1, int list1_size, int * list2, int
 //
 int HyperCube_Class::split_list_index (int *list, int list_size, int pivot) {
     int first, last, mid;  
-    first = 0; last = list_size; mid = (first+last)/2;
+    first = 0; 
+	last = list_size; 
+	mid = (first+last)/2;
     while (first < last) {
-	if (list[mid] <= pivot) {
-	    first = mid+1; mid = (first+last)/2;
-	} else {
-	    last = mid; mid = (first+last)/2;
-	}
+		if (list[mid] <= pivot) 
+		{
+		    first = mid+1; 
+			mid = (first+last)/2;
+		} 
+		else 
+		{
+		    last = mid; 
+			mid = (first+last)/2;
+		}
     }
     return last;
 }
@@ -126,9 +139,11 @@ int HyperCube_Class::split_list_index (int *list, int list_size, int pivot) {
 void HyperCube_Class::print_local_list() {
     int j;
     for (j = 0; j < list_size; j++) {
-	if ((j % 8) == 0) printf("[Proc: %0d]", my_id);
-	printf(" %8d", list[j]); 
-	if ((j % 8) == 7) printf("\n"); 
+		if ((j % 8) == 0) 
+			printf("[Proc: %0d]", my_id);
+		printf(" %8d", list[j]); 
+		if ((j % 8) == 7) 
+			printf("\n"); 
     }
     printf("\n"); 
     return;
@@ -141,11 +156,11 @@ void HyperCube_Class::print_list() {
     int dummy = 0;
     MPI_Status status; 
     if (my_id-1 >= 0) {
-	MPI_Recv(&dummy, 1, MPI_INT, my_id-1, tag, MPI_COMM_WORLD, &status);
+		MPI_Recv(&dummy, 1, MPI_INT, my_id-1, tag, MPI_COMM_WORLD, &status);
     }
     print_local_list(); 
     if (my_id+1 < num_procs) {
-	MPI_Send(&dummy, 1, MPI_INT, my_id+1, tag, MPI_COMM_WORLD);
+		MPI_Send(&dummy, 1, MPI_INT, my_id+1, tag, MPI_COMM_WORLD);
     }
 }
 
@@ -160,22 +175,23 @@ void HyperCube_Class::print_list() {
 int * HyperCube_Class::initialize_list(int type) {
     int j;
     int * list = new int[list_size]; 
-    switch (type) {
+    switch (type) 
+	{
 	case -1:	// Elements are in descending order
 	    for (j = 0; j < list_size; j++) {
-		list[j] = (num_procs-my_id)*list_size-j;
+			list[j] = (num_procs-my_id)*list_size-j;
 	    }
 	    break;
 	case -2:	// Elements are in ascending order
 	    for (j = 0; j < list_size; j++) {
-		list[j] = my_id*list_size+j+1;
+			list[j] = my_id*list_size+j+1;
 	    }
 	    break;
 	default: 
 	    srand48(type + my_id); 
 	    list[0] = lrand48() % 100;
 	    for (j = 1; j < list_size; j++) {
-		list[j] = lrand48() % 100;
+			list[j] = lrand48() % 100;
 	    }
 	    break;
     }
@@ -195,40 +211,50 @@ void HyperCube_Class::check_list() {
     int j, my_max;
     MPI_Status status; 
     // Receive largest list value from process with rank (my_id-1)
-    if (my_id-1 >= 0) {
-	MPI_Recv(&max_nbr, 1, MPI_INT, my_id-1, tag, MPI_COMM_WORLD, &status);
-	// Good practice to check status!
+    if (my_id-1 >= 0) 
+	{
+		MPI_Recv(&max_nbr, 1, MPI_INT, my_id-1, tag, MPI_COMM_WORLD, &status);
+		// Good practice to check status!
     }
     // Check that the local list is sorted and that elements are larger than 
     // or equal to the largest on process with rank (my_id-1)
     // (error is set to 1 if a pair of elements is not sorted correctly)
     local_error = 0;
-    if (list_size > 0) {
-	if (list[0] < max_nbr) local_error = 1; 
-	for (j = 1; j < list_size; j++) {
-	    if (list[j] < list[j-1]) local_error = 1;
-	}
-	my_max = list[list_size-1];
-    } else {					// Modified 6-21-2017
-	my_max = max_nbr;			// Modified 6-21-2017
+    if (list_size > 0) 
+	{
+		if (list[0] < max_nbr) 
+			local_error = 1; 
+		for (j = 1; j < list_size; j++) 
+		{
+		    if (list[j] < list[j-1]) 
+				local_error = 1;
+		}
+		my_max = list[list_size-1];
+    } 
+	else {					// Modified 6-21-2017
+		my_max = max_nbr;			// Modified 6-21-2017
     }
     if (VERBOSE > 1) {
-	printf("[Proc: %0d] check_list: local_error = %d\n", my_id, local_error);
+		printf("[Proc: %0d] check_list: local_error = %d\n", my_id, local_error);
     }
     // Send largest list value to process with rank (my_id+1)
     if (my_id+1 < num_procs) {
-	MPI_Send(&my_max, 1, MPI_INT, my_id+1, tag, MPI_COMM_WORLD);
+		MPI_Send(&my_max, 1, MPI_INT, my_id+1, tag, MPI_COMM_WORLD);
 	// Good practice to check status!
     }
     // Collect errors from all processes
     // error = 0;
     MPI_Reduce(&local_error, &error, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (my_id == 0) {
-	if (error == 0) {
-	    printf("[Proc: %0d] Congratulations. The list has been sorted correctly.\n", my_id);
-	} else {
-	    printf("[Proc: %0d] Error encountered. The list has not been sorted correctly.\n", my_id);
-	}
+    if (my_id == 0) 
+	{
+		if (error == 0) 
+		{
+		    printf("[Proc: %0d] Congratulations. The list has been sorted correctly.\n", my_id);
+		} 
+		else 
+		{
+		    printf("[Proc: %0d] Error encountered. The list has not been sorted correctly.\n", 	my_id);
+		}
     }
 }
 //
@@ -272,120 +298,124 @@ void HyperCube_Class::HyperCube_QuickSort() {
     // Hypercube Quicksort
     for (k = dimension; k > 0; k--) {
 
-	// Find processes that make up the sub-hypercube of dimension k and 
-	// include this process; the sub-hypercube includes all processes with 
-	// ranks that differ from this process in the lowest k bits only 
-	sub_hypercube_size = (int) pow(2,k); mask = (~0) << k;
-	sub_hypercube_processors = new int[sub_hypercube_size]; 
-	sub_hypercube_processors[0] = my_id & mask; 
-	for (i = 1; i < sub_hypercube_size; i++) {
-	    sub_hypercube_processors[i] = sub_hypercube_processors[i-1]+1;
-	}
+		// Find processes that make up the sub-hypercube of dimension k and 
+		// include this process; the sub-hypercube includes all processes with 
+		// ranks that differ from this process in the lowest k bits only 
+		sub_hypercube_size = (int) pow(2,k); 
+		mask = (~0) << k;
+		sub_hypercube_processors = new int[sub_hypercube_size]; 
+		sub_hypercube_processors[0] = my_id & mask; 
+		for (i = 1; i < sub_hypercube_size; i++) {
+		    sub_hypercube_processors[i] = sub_hypercube_processors[i-1]+1;
+		}
 
-	// Construct processor group for sub-hypercube
-	MPI_Group_incl(hypercube_group, sub_hypercube_size, sub_hypercube_processors, &sub_hypercube_group);
+		// Construct processor group for sub-hypercube
+		MPI_Group_incl(hypercube_group, sub_hypercube_size, sub_hypercube_processors, &	sub_hypercube_group);
 
-	// Construct processor communicator to simplify computation of pivot
-	// via MPI_Allreduce within the sub-hypercube 
-	MPI_Comm_create(MPI_COMM_WORLD, sub_hypercube_group, &sub_hypercube_comm);
+		// Construct processor communicator to simplify computation of pivot
+		// via MPI_Allreduce within the sub-hypercube 
+		MPI_Comm_create(MPI_COMM_WORLD, sub_hypercube_group, &sub_hypercube_comm);
 
-	// Find median of sorted local list
-	local_median = list[list_size/2];
+		// Find median of sorted local list
+		local_median = list[list_size/2];
 
-	// MPI-1: Compute pivot for hypercube of dimension k (pivot = mean of medians)
-	// MPI_Allreduce can be used with the MPI Communicator sub_hypercube_comm to 
-	// compute the sum of local_median values on processes of this hypercube
+		// MPI-1: Compute pivot for hypercube of dimension k (pivot = mean of medians)
+		// MPI_Allreduce can be used with the MPI Communicator sub_hypercube_comm to 
+		// compute the sum of local_median values on processes of this hypercube
 
-	// ***** Add MPI call here *****
+		// ***** Add MPI call here *****
+		
 
+		pivot = pivot/sub_hypercube_size;
 
-	pivot = pivot/sub_hypercube_size;
+		// Search for smallest element in list which is larger than pivot
+		// Upon return:
+		//   list[0 ... idx-1] <= pivot
+		//   list[idx ... list_size-1] > pivot
+		idx = split_list_index(list, list_size, pivot);
 
-	// Search for smallest element in list which is larger than pivot
-	// Upon return:
-	//   list[0 ... idx-1] <= pivot
-	//   list[idx ... list_size-1] > pivot
-	idx = split_list_index(list, list_size, pivot);
+		list_size_leq = idx;
+		list_size_gt = list_size - idx;
 
-	list_size_leq = idx;
-	list_size_gt = list_size - idx;
+		// Communicate with neighbor along dimension k
+		nbr_k = neighbor_along_dim_k(k); 
 
-	// Communicate with neighbor along dimension k
-	nbr_k = neighbor_along_dim_k(k); 
-
-	if (nbr_k > my_id) {
-	    // MPI-2: Send number of elements greater than pivot
-
-	    // ***** Add MPI call here *****
-
-
-	    // MPI-3: Receive number of elements less than or equal to pivot
-
-	    // ***** Add MPI call here *****
+		if (nbr_k > my_id) 
+		{
+		    // MPI-2: Send number of elements greater than pivot
+			
+		    // ***** Add MPI call here *****
 
 
-	    // Allocate storage for neighbor's list
-	    nbr_list = new int[nbr_list_size];
+		    // MPI-3: Receive number of elements less than or equal to pivot
 
-	    // MPI-4: Send list[idx ... list_size-1] to neighbor
-
-	    // ***** Add MPI call here *****
+		    // ***** Add MPI call here *****
 
 
-	    // MPI-5: Receive neighbor's list of elements that are less than or equal to pivot
+		    // Allocate storage for neighbor's list
+		    nbr_list = new int[nbr_list_size];
 
-	    // ***** Add MPI call here *****
+		    // MPI-4: Send list[idx ... list_size-1] to neighbor
 
-
-	    // Merge local list of elements less than or equal to pivot with neighbor's list
-	    new_list = merged_list(list, idx, nbr_list, nbr_list_size); 
-
-	    // Replace local list with new_list, update size
-	    delete [] list; 
-	    delete [] nbr_list; 
-	    list = new_list; 
-	    list_size = list_size_leq+nbr_list_size;
-
-	} else {
-	    // MPI-6: Receive number of elements greater than pivot
-
-	    // ***** Add MPI call here *****
+		    // ***** Add MPI call here *****
 
 
-	    // MPI-7: Send number of elements less than or equal to pivot
+		    // MPI-5: Receive neighbor's list of elements that are less than or equal 	to pivot
 
-	    // ***** Add MPI call here *****
-
-
-	    // Allocate storage for neighbor's list
-	    nbr_list = new int[nbr_list_size]; 
-
-	    // MPI-8: Receive neighbor's list of elements that are greater than the pivot
-
-	    // ***** Add MPI call here *****
+		    // ***** Add MPI call here *****
 
 
-	    // MPI-9: Send list[0 ... idx-1] to neighbor
+		    // Merge local list of elements less than or equal to pivot with 	neighbor's list
+		    new_list = merged_list(list, idx, nbr_list, nbr_list_size); 
 
-	    // ***** Add MPI call here *****
+		    // Replace local list with new_list, update size
+		    delete [] list; 
+		    delete [] nbr_list; 
+		    list = new_list; 
+		    list_size = list_size_leq+nbr_list_size;
+
+		} 
+		else 
+		{
+		    // MPI-6: Receive number of elements greater than pivot
+
+		    // ***** Add MPI call here *****
 
 
-	    // Merge local list of elements greater than pivot with neighbor's list
-	    new_list = merged_list(&list[idx], list_size_gt, nbr_list, nbr_list_size); 
+		    // MPI-7: Send number of elements less than or equal to pivot
 
-	    // Replace local list with new_list, update size
-	    delete [] list; 
-	    delete [] nbr_list; 
-	    list = new_list; 
-	    list_size = list_size_gt+nbr_list_size;
-	}
-	// Deallocate processor group, processor communicator, 
-	// sub_hypercube_processors array; these variables will be 
-	// reused in the next iteration of this for loop for a hypercube of 
-	// dimension (k-1)
-	MPI_Group_free(&sub_hypercube_group);
-	MPI_Comm_free(&sub_hypercube_comm);
-	delete [] sub_hypercube_processors;
+		    // ***** Add MPI call here *****
+
+
+		    // Allocate storage for neighbor's list
+		    nbr_list = new int[nbr_list_size]; 
+
+		    // MPI-8: Receive neighbor's list of elements that are greater than the 	pivot
+
+		    // ***** Add MPI call here *****
+
+
+		    // MPI-9: Send list[0 ... idx-1] to neighbor
+
+		    // ***** Add MPI call here *****
+
+
+		    // Merge local list of elements greater than pivot with neighbor's list
+		    new_list = merged_list(&list[idx], list_size_gt, nbr_list, nbr_list_size); 
+
+		    // Replace local list with new_list, update size
+		    delete [] list; 
+		    delete [] nbr_list; 
+		    list = new_list; 
+		    list_size = list_size_gt+nbr_list_size;
+		}
+		// Deallocate processor group, processor communicator, 
+		// sub_hypercube_processors array; these variables will be 
+		// reused in the next iteration of this for loop for a hypercube of 
+		// dimension (k-1)
+		MPI_Group_free(&sub_hypercube_group);
+		MPI_Comm_free(&sub_hypercube_comm);
+		delete [] sub_hypercube_processors;
     }
 }
 
@@ -397,12 +427,17 @@ void HyperCube_Class::HyperCube_QuickSort() {
 int compare_int(const void *a0, const void *b0) {
     int a = *(int *)a0;
     int b = *(int *)b0;
-    if (a < b) {
-	return -1; 
-    } else if (a > b) {
-	return 1;
-    } else {
-	return 0;
+    if (a < b) 
+	{
+		return -1; 
+    } 
+	else if (a > b) 
+	{
+		return 1;
+    } 
+	else 
+	{
+		return 0;
     }
 }
 
@@ -427,27 +462,30 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD,&my_id);	// my_id = rank of this process
 
     //  Check inputs
-    if (argc != 3)  {
-	if (my_id == 0) 
-	    printf("Usage: mpirun -np <number_of_processes> <executable_name> <list_size_per_process> <type>\n");
-	exit(0);
+    if (argc != 3)  
+	{
+		if (my_id == 0) 
+		    printf("Usage: mpirun -np <number_of_processes> <executable_name> 	<list_size_per_process> <type>\n");
+			exit(0);
     }
 
     size = atoi(argv[argc-2]);
-    if ((size <= 0) || (size > MAX_LIST_SIZE_PER_PROC)) {
-	if (my_id == 0)
-	    printf("List size outside range [%d ... %d]. Aborting ...\n", 1, MAX_LIST_SIZE_PER_PROC);
-	exit(0);
+    if ((size <= 0) || (size > MAX_LIST_SIZE_PER_PROC)) 
+	{
+		if (my_id == 0)
+		    printf("List size outside range [%d ... %d]. Aborting ...\n", 1, 	MAX_LIST_SIZE_PER_PROC);
+			exit(0);
     }
 
     type = atoi(argv[argc-1]);
 
     // Compute hypercube dimension: 2^dim = num_procs
     dim = (int) log2((double) num_procs); 
-    if (num_procs != (int) pow(2,dim)) {
-	if (my_id == 0) 
-	    printf("Number of processors must be power of 2. Aborting ...\n"); 
-	exit(0); 
+    if (num_procs != (int) pow(2,dim)) 
+	{
+		if (my_id == 0) 
+		    printf("Number of processors must be power of 2. Aborting ...\n"); 
+			exit(0); 
     }
 
     // Hypercube Initializations +++++++++++++++++++++++++++++++++++++++++++
@@ -456,7 +494,7 @@ int main(int argc, char *argv[])
     HyperCube.Initialize(dim, size, type);	// Initialize Hypercube node
 
     if (VERBOSE > 2) {
-	HyperCube.print_list();
+		HyperCube.print_list();
     }
 
     // Start Hypercube Quicksort ..............................................
@@ -466,16 +504,16 @@ int main(int argc, char *argv[])
     // End Hypercube Quicksort ..............................................
 
     if (my_id == 0) {
-	printf("[Proc: %0d] number of processes = %d, ", HyperCube.my_id, HyperCube.num_procs);
-	printf("initial local list size = %d, ", HyperCube.list_size_initial);
-	printf("hypercube quicksort time = %f\n", total_time); 
+		printf("[Proc: %0d] number of processes = %d, ", HyperCube.my_id, HyperCube.num_procs);
+		printf("initial local list size = %d, ", HyperCube.list_size_initial);
+		printf("hypercube quicksort time = %f\n", total_time); 
     }
 
     // Check if list has been sorted correctly
     HyperCube.check_list();
 
     if (VERBOSE > 2) {
-	HyperCube.print_list();
+		HyperCube.print_list();
     }
 
     MPI_Finalize();				// Finalize MPI
