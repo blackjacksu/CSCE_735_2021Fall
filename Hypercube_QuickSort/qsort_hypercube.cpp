@@ -310,7 +310,7 @@ void HyperCube_Class::HyperCube_QuickSort() {
 		for (i = 1; i < sub_hypercube_size; i++) {
 		    sub_hypercube_processors[i] = sub_hypercube_processors[i-1]+1;
 		}
-#ifndef DEBUG
+#if DEBUG
 		printf("PID:%d, k:%d, subcube size:%d\n", my_id, k, sub_hypercube_size);
 #endif
 		// Construct processor group for sub-hypercube
@@ -344,11 +344,13 @@ void HyperCube_Class::HyperCube_QuickSort() {
 
 		// Communicate with neighbor along dimension k
 		nbr_k = neighbor_along_dim_k(k); 
-#ifndef DEBUG
+#if DEBUG
 		printf("PID:%d, List size:%d(%d, %d), Pivot:%d, [%d %d]\n", my_id, list_size, list_size_leq, list_size_gt, pivot, list[idx-1], list[idx]);
 #endif
 		if (nbr_k > my_id) 
 		{
+			nbr_k = nbr_k % sub_hypercube_size;
+
 		    // MPI-2: Send number of elements greater than pivot
 			
 		    // ***** Add MPI call here *****
@@ -384,6 +386,8 @@ void HyperCube_Class::HyperCube_QuickSort() {
 		} 
 		else 
 		{
+			nbr_k = nbr_k % sub_hypercube_size;
+
 		    // MPI-6: Receive number of elements greater than pivot
 
 		    // ***** Add MPI call here *****
@@ -416,9 +420,13 @@ void HyperCube_Class::HyperCube_QuickSort() {
 		    list = new_list; 
 		    list_size = list_size_gt + nbr_list_size;
 		}
-#ifndef DEBUG		
+#if DEBUG		
 		printf("PID:%d, List merged\n", my_id);
 #endif
+
+		// Add barrier 
+		// MPI_Barrier(MPI_COMM_WORLD);
+
 		// Deallocate processor group, processor communicator, 
 		// sub_hypercube_processors array; these variables will be 
 		// reused in the next iteration of this for loop for a hypercube of 
@@ -467,10 +475,12 @@ int main(int argc, char *argv[])
     double start, total_time;		// Timing variables
 
     // MPI
-    MPI_Init(&argc,&argv);		// Initialize MPI
-    MPI_Comm_size(MPI_COMM_WORLD,&num_procs);	// num_procs = number of processes
-    MPI_Comm_rank(MPI_COMM_WORLD,&my_id);	// my_id = rank of this process
-
+    MPI_Init(&argc, &argv);		// Initialize MPI
+    MPI_Comm_size(MPI_COMM_WORLD, &num_procs);	// num_procs = number of processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_id);	// my_id = rank of this process
+#if DEBUG
+	printf("PID:%d, num proc:%d\n", my_id, num_procs);
+#endif
     //  Check inputs
     if (argc != 3)  
 	{
@@ -510,7 +520,7 @@ int main(int argc, char *argv[])
     // Start Hypercube Quicksort ..............................................
     start = MPI_Wtime(); 
     HyperCube.HyperCube_QuickSort(); 
-    total_time = MPI_Wtime()-start;
+    total_time = MPI_Wtime() - start;
     // End Hypercube Quicksort ..............................................
 
     if (my_id == 0) {
