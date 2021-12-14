@@ -1,0 +1,15 @@
+[willytwsu@grace2 Major_Project]$ mpirun -np 2 ./qsort_hypercube.exe 4 -1
+[Proc: 0] number of processes = 2, initial local list size = 4, hypercube quicksort time = 0.003159
+[Proc: 0] Congratulations. The list has been sorted correctly.
+[willytwsu@grace2 Major_Project]$ mpirun -np 4 ./qsort_hypercube.exe 4 -2
+[Proc: 0] number of processes = 4, initial local list size = 4, hypercube quicksort time = 0.001971
+[Proc: 0] Congratulations. The list has been sorted correctly.
+[willytwsu@grace2 Major_Project]$ mpirun -np 8 ./qsort_hypercube.exe 4 -1
+[Proc: 0] number of processes = 8, initial local list size = 4, hypercube quicksort time = 0.005848
+[Proc: 0] Congratulations. The list has been sorted correctly.
+[willytwsu@grace2 Major_Project]$ mpirun -np 16 ./qsort_hypercube.exe 4 0
+[Proc: 0] number of processes = 16, initial local list size = 4, hypercube quicksort time = 0.010782
+[Proc: 0] Congratulations. The list has been sorted correctly.
+[willytwsu@grace2 Major_Project]$ mpirun -np 16 ./qsort_hypercube.exe 20480000 0
+[Proc: 0] number of processes = 16, initial local list size = 20480000, hypercube quicksort time = 2.712228
+[Proc: 0] Congratulations. The list has been sorted correctly.
