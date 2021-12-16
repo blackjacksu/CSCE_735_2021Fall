@@ -70,11 +70,14 @@ time = 0.010782
 %------------------------------------------------------------------------------------------
 %Part B
 \part*{Part B: Scalability Study}
-\section*{{Weak Scalability Study}
-\subsection*{3. (5 points) In your own words, describe what is meant by weak scalability, i.e., what does it mean that an algorithm or implementation is “weakly” scalable. If you use a textbooks or an online resource as reference, then include a citation.}
-Weak scalability is not like the literal meaning saying that the scalability is negative or what. It simply state that the problem size of the parallel computing structure will increase along with the process number. When the node of the computing power increase, the problem size will increase as well.}
+\section*{Weak Scalability Study}
+\subsection*{3. (5 points) In your own words, describe what is meant by weak scalability, i.e., what does it mean that an algorithm or implementation is "weakly" scalable. If you use a textbooks or an online resource as reference, then include a citation.}
+Weak scalability refers to the situation that the problem size is in positive relation to the computing power. When the node of the computing power increase, the problem size will increase as well. Gustafson's law has mentioned the limitation and the speedup of the weak scalability in different aspect than Amdahl's law. The speed-up of weak scalability is
+\begin{equation}
+    S = s + p * N 
+\end{equation}
 \subsection*{4. (15 points) Run your code to sort a distributed list of size $n \times p$ where n is the size of the local list on each process and p is the number of processes. For your experiments, use n=20,480,000 and p = 1, 2, 4, 8, 16, 32, and 64. Set type=0. Plot the execution time, speedup, and efficiency of your code as a function of p. Use logarithmic scale for the x-axis. \\ Note that the size of the list to be sorted is proportional to the number of processes p. In order to get speedup for a specific value of p, you need to determine the execution time to sort a list of size $n \times p$ with one process. As an example, speedup for $p = 4$ is the ratio of execution time for a list of size 81,920,000 with one process (T1) to the execution time for a list of size 20,480,000 with 4 processes (T4).}
-\section*{Strong Scalability Study}
+We can see it in the graph, the speed-up is nearly constant along with the increase of the logarithm of the process number. 
 \begin{figure}[H]
     \centering
     \includegraphics[width=12cm]{Weak_scalability_Si_logP.png}
@@ -82,9 +85,9 @@ Weak scalability is not like the literal meaning saying that the scalability is 
     \caption{k = 20}
     \label{fig:my_label}
 \end{figure}
+\section*{Strong Scalability Study}
 \subsection*{5. (5 points) In your own words, describe what is meant by strong scalability, i.e., what does it mean that an algorithm or implementation is “strongly” scalable. If you use a textbooks or an online resource as reference, then Include citations as appropriate.}
-Strong scalability stated that the problem size will remain the same as the number of the process increase whatsoever. 
-
+Strong scalability stated that the problem size will remain the same as the number of the process increase whatsoever. Therefore, as the process increase, the speed-up will increase exponentially until it reach the parallel computing limitation, which is mentioned in Amdahl's law. The Amdahl's law state that the existance of the maximum speed-up will relie on the proportation of the seriel part of the program. If the calculation needs to be scale up, the seriel part of the program shouldn't exceed over $0.1\%$. 
 \subsection*{6. (15 points) Now run your code with n=20,480,000/p where p = 1, 2, 4, 8, 16, 32, and 64. Set type=0. Plot the execution time, speedup, and efficiency of your code as a function of p. Use logarithmic scale for the x-axis.
 Unlike the weak scalability study, here the size of the list to be sorted remains unchanged at 20,480,000 even as you increase the number of processes. To determine speedup for any p you need to compare the execution time on p processes to the execution time for a list of size 20,480,000 with one process.}
 %Part B.Graph

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.10.27)  14 DEC 2021 17:01
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.10.27)  16 DEC 2021 00:05
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -734,16 +734,6 @@ Overfull \hbox (3.6706pt too wide) in paragraph at lines 68--68
 []\T1/cmtt/m/n/10 [Proc: 0] number of processes = 16, initial local list size = 20480000, hypercube quick[] 
  []
 
-<Weak_scalability_Si_logP.png, id=1, 490.83376pt x 342.27875pt>
-File: Weak_scalability_Si_logP.png Graphic file (type png)
-<use Weak_scalability_Si_logP.png>
-Package pdftex.def Info: Weak_scalability_Si_logP.png  used on input line 80.
-(pdftex.def)             Requested size: 341.43306pt x 238.105pt.
-<Weak_scalability_Ei_logP.png, id=3, 490.83376pt x 342.27875pt>
-File: Weak_scalability_Ei_logP.png Graphic file (type png)
-<use Weak_scalability_Ei_logP.png>
-Package pdftex.def Info: Weak_scalability_Ei_logP.png  used on input line 81.
-(pdftex.def)             Requested size: 341.43306pt x 238.105pt.
 [1
 Non-PDF special ignored!
 <special> header=pstricks.pro
@@ -771,30 +761,37 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 <special> ps:tx@Dict begin  gsave STV CP T /ps@rot 0 def grestore  end
 {/usr/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \vbox (82.48251pt too high) has occurred while \output is active []
-
- [2 </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Weak_scalability_Si_logP.png> </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Weak_scalability_Ei_logP.png>]
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 76.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 76.
+<Weak_scalability_Si_logP.png, id=14, 490.83376pt x 342.27875pt>
+File: Weak_scalability_Si_logP.png Graphic file (type png)
+<use Weak_scalability_Si_logP.png>
+Package pdftex.def Info: Weak_scalability_Si_logP.png  used on input line 83.
+(pdftex.def)             Requested size: 341.43306pt x 238.105pt.
+<Weak_scalability_Ei_logP.png, id=16, 490.83376pt x 342.27875pt>
+File: Weak_scalability_Ei_logP.png Graphic file (type png)
+<use Weak_scalability_Ei_logP.png>
+Package pdftex.def Info: Weak_scalability_Ei_logP.png  used on input line 84.
+(pdftex.def)             Requested size: 341.43306pt x 238.105pt.
+ [2]
 <Strong_scalability_Si_logP.png, id=23, 490.83376pt x 342.27875pt>
 File: Strong_scalability_Si_logP.png Graphic file (type png)
 <use Strong_scalability_Si_logP.png>
-Package pdftex.def Info: Strong_scalability_Si_logP.png  used on input line 93.
+Package pdftex.def Info: Strong_scalability_Si_logP.png  used on input line 96.
 (pdftex.def)             Requested size: 341.43306pt x 238.105pt.
 <Strong_scalability_Ei_logP.png, id=24, 490.83376pt x 342.27875pt>
 File: Strong_scalability_Ei_logP.png Graphic file (type png)
 <use Strong_scalability_Ei_logP.png>
-Package pdftex.def Info: Strong_scalability_Ei_logP.png  used on input line 94.
+Package pdftex.def Info: Strong_scalability_Ei_logP.png  used on input line 97.
 (pdftex.def)             Requested size: 341.43306pt x 238.105pt.
- [3 </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Strong_scalability_Si_logP.png> </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Strong_scalability_Ei_logP.png>]
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 104.
-LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 104.
-
-Underfull \hbox (badness 10000) in paragraph at lines 104--109
+ [3 </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Weak_scalability_Si_logP.png> </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Weak_scalability_Ei_logP.png>] [4 </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Strong_scalability_Si_logP.png> </Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Strong_scalability_Ei_logP.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 107--112
 
  []
 
-[4] (/Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Major_Project_Main.aux)
+[5] (/Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Major_Project_Main.aux)
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 0.5pt have occurred.
@@ -817,16 +814,16 @@ Package logreq Info: Writing requests to 'Major_Project_Main.run.xml'.
 Here is how much of TeX's memory you used:
  21110 strings out of 478994
  379871 string characters out of 5858183
- 1177838 words of memory out of 5000000
+ 1176836 words of memory out of 5000000
  38336 multiletter control sequences out of 15000+600000
  412643 words of font info for 45 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  75i,11n,80p,965b,1649s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfbx2074.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
-Output written on /Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Major_Project_Main.pdf (4 pages, 203911 bytes).
+{/usr/local/texlive/2021/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}</usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfbx2074.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/public/cm-super/sftt1000.pfb>
+Output written on /Users/willysu/Desktop/researching/GitHub/CSCE_735_2021Fall/Hypercube_QuickSort/Major_Proj_Tex/Major_Project_Main.pdf (5 pages, 216073 bytes).
 PDF statistics:
- 67 PDF objects out of 1000 (max. 8388607)
- 42 compressed objects within 1 object stream
+ 74 PDF objects out of 1000 (max. 8388607)
+ 47 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  21 words of extra memory for PDF output out of 10000 (max. 10000000)
 
